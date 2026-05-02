@@ -1,7 +1,9 @@
 import Avatar from '../Avatar/Avatar';
 
 export default function ProfilePanel({ contact }) {
-  if (!contact) return <aside className="w-60 min-w-[240px] h-full bg-bg-sidebar border-l border-border-light py-7 px-5 flex flex-col items-center gap-1" />;
+  if (!contact) return (
+    <aside className="w-60 min-w-[240px] h-full bg-bg-sidebar border-l border-border-light py-7 px-5 flex flex-col items-center gap-1" />
+  );
 
   return (
     <aside className="w-60 min-w-[240px] h-full bg-bg-sidebar border-l border-border-light overflow-y-auto py-7 px-5 flex flex-col items-center gap-1">

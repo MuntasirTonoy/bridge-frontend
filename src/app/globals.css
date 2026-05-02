@@ -1,114 +1,149 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Color Palette */
-  --bg-primary: #eef0f3;
-  --bg-secondary: #f5f6f8;
+  /* --- Light Mode (Default) --- */
+  --bg-primary: #f0f2f5;
+  --bg-secondary: #ffffff;
   --bg-white: #ffffff;
-  --bg-sidebar: #f0f2f5;
-  --bg-chat: #e8ebef;
-  --bg-date-divider: rgba(255, 255, 255, 0.7);
+  --bg-sidebar: #ffffff;
+  --bg-chat: #f0f2f5;
+  --bg-date-divider: rgba(0, 0, 0, 0.05);
 
-  --accent-primary: #3d5a73;
-  --accent-dark: #2c4257;
-  --accent-light: #4f7391;
-  --accent-bubble: #4a6f8a;
+  --accent-primary: #0078d4; /* Skype Blue */
+  --accent-dark: #005a9e;
+  --accent-light: #2b88d8;
 
-  --text-primary: #1a2332;
-  --text-secondary: #5a6a7a;
-  --text-muted: #8a9aaa;
-  --text-light: #c0ccd8;
-  --text-white: #ffffff;
+  --text-primary: #242424;
+  --text-secondary: #605e5c;
+  --text-muted: #a19f9d;
 
-  --border-light: #dde3ea;
-  --border-medium: #c8d0da;
+  --border-light: #edebe9;
+  --border-medium: #d2d0ce;
 
-  --bubble-sent: #3d5a73;
+  --bubble-sent: #0078d4;
   --bubble-received: #ffffff;
-  --bubble-received-alt: #f0f3f7;
+  --bubble-received-alt: #f3f2f1;
 
-  --online-dot: #4caf9e;
+  --online-dot: #6bb700;
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
 
-  /* Dark mode */
-  --dm-bg-primary: #1a1f2e;
-  --dm-bg-secondary: #222736;
-  --dm-bg-sidebar: #1e2336;
-  --dm-bg-chat: #1a1f2e;
-  --dm-bg-card: #252c3d;
-  --dm-text-primary: #e8edf4;
-  --dm-text-secondary: #9aa5b8;
-  --dm-text-muted: #6a7a8e;
-  --dm-border: #2e3650;
-  --dm-bubble-received: #252c3d;
+  /* --- Dark Mode (Skype Slate Pattern) --- */
+  --dm-bg-primary: #040d14; /* Deepest Slate/Navy */
+  --dm-bg-secondary: #111a22; /* Elevated surfaces (Sidebar) */
+  --dm-bg-chat: #081219; /* Main Chat Background */
+  --dm-bg-card: #1f2a33; /* Received Message Bubbles */
+  --dm-bg-sidebar: #111a22;
+
+  /* Skype Dark Accents */
+  --dm-accent-primary: #0078d4; /* Remains Skype Blue */
+  --dm-accent-dark: #005a9e;
+
+  /* Typography */
+  --dm-text-primary: #ffffff; /* Pure white for chat */
+  --dm-text-secondary: #b3b3b3; /* Light gray for info */
+  --dm-text-muted: #808080; /* Darker gray for timestamps */
+
+  /* Borders */
+  --dm-border: #1f2a33; /* Blends with cards */
+  --dm-bubble-received: #1f2a33; /* Dark gray-blue received bubble */
 }
 
-/* Dark mode class */
+/* Dark mode class mapping */
 .dark {
   --bg-primary: var(--dm-bg-primary);
   --bg-secondary: var(--dm-bg-secondary);
   --bg-white: var(--dm-bg-card);
   --bg-sidebar: var(--dm-bg-sidebar);
   --bg-chat: var(--dm-bg-chat);
+
+  --accent-primary: var(--dm-accent-primary);
+
   --text-primary: var(--dm-text-primary);
   --text-secondary: var(--dm-text-secondary);
   --text-muted: var(--dm-text-muted);
+
   --border-light: var(--dm-border);
-  --border-medium: var(--dm-border);
+  --border-medium: #2d3a46;
+
+  --bubble-sent: var(--dm-accent-primary);
   --bubble-received: var(--dm-bubble-received);
-  --bubble-received-alt: var(--dm-bubble-received);
-  --bg-date-divider: rgba(255, 255, 255, 0.1);
+  --bubble-received-alt: #16212b;
+
+  --bg-date-divider: rgba(255, 255, 255, 0.05);
+
+  --online-dot: #83d019; /* Brighter green for dark mode contrast */
 }
 
 @layer base {
-  html, body {
+  html,
+  body {
     height: 100%;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    font-size: 15px; /* Skype uses slightly larger base text */
+    line-height: 1.4;
     color: var(--text-primary);
     background-color: var(--bg-primary);
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
 
   button {
     cursor: pointer;
-    border: none;
-    background: none;
-    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Skype style rounded buttons */
+  .btn-skype {
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-weight: 600;
   }
 
   input {
     font-family: inherit;
     border: none;
     outline: none;
+    background: transparent;
   }
 
-  a {
-    text-decoration: none;
-    color: inherit;
+  /* Rounded message bubbles */
+  .message-bubble {
+    border-radius: 18px;
+    padding: 10px 14px;
+    max-width: 75%;
   }
 }
 
-/* Scrollbar */
+/* Scrollbar styling - Skype inspired */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-medium);
-  border-radius: 4px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+  background-clip: content-box;
+}
+
+/* Selection Highlight */
+::selection {
+  background: rgba(0, 120, 212, 0.3);
+  color: inherit;
 }

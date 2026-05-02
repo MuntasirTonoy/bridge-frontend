@@ -31,6 +31,9 @@ export default function ChatPage() {
   const [blockedUsersIds, setBlockedUsersIds] = useState([]);
   const [forwardingMsg, setForwardingMsg] = useState(null);
 
+  // Mobile navigation: 'sidebar' | 'chat'
+  const [activeMobileView, setActiveMobileView] = useState('sidebar');
+
   // Helper to format date
   const formatDate = (dateString) => {
     const d = new Date(dateString);
@@ -467,63 +470,124 @@ export default function ChatPage() {
     }
   };
 
+  const handleSelectContact = (id) => {
+    setActiveContactId(id);
+    setActiveMobileView('chat');
+  };
+
+  const handleMobileBack = () => {
+    setActiveMobileView('sidebar');
+  };
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bg-primary">
-      <Sidebar
-        contacts={formattedContacts}
-        activeId={activeContactId}
-        onSelect={setActiveContactId}
-        currentUser={currentUser}
-        onSignOut={handleSignOut}
-        isDark={isDark}
-        onToggleTheme={() => setIsDark(d => !d)}
-        onAvatarClick={() => setShowProfileModal(true)}
-      />
-      <ChatArea
-        contact={activeContact}
-        currentUser={currentUser}
-        conversation={activeConversationData}
-        onSendMessage={handleSendMessage}
-        onFinalizeFileMessage={handleFinalizeFileMessage}
-        onRemoveOptimisticMessage={handleRemoveOptimisticMessage}
-        onEditMessage={handleEditMessage}
-        onDeleteMessage={handleDeleteMessage}
-        onForward={(msg) => setForwardingMsg(msg)}
-        socket={socket}
-        onChatAction={handleChatAction}
-      />
-      <ProfilePanel contact={activeContact} />
+      {/* Sidebar: full-screen on mobile when activeMobileView==='sidebar', always visible on md+ */}
+      <div className={`
+        ${
+          activeMobileView === 'sidebar'
+            ? 'flex'
+            : 'hidden'
+        }
+        md:flex
+        h-full w-full md:w-auto flex-shrink-0
+      `}>
+        <Sidebar
+          contacts={formattedContacts}
+          activeId={activeContactId}
+          onSelect={handleSelectContact}
+          currentUser={currentUser}
+          onSignOut={handleSignOut}
+          isDark={isDark}
+          onToggleTheme={() => setIsDark(d => !d)}
+          onAvatarClick={() => setShowProfileModal(true)}
+        />
+      </div>
 
-      {forwardingMsg && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
-          <div className="bg-bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-pop-in flex flex-col max-h-[80vh]">
-            <div className="p-6 border-b border-border-light flex items-center justify-between">
-              <h3 className="text-[1.2rem] font-bold text-text-primary">Forward to...</h3>
-              <button className="p-2 rounded-full hover:bg-bg-primary text-text-muted" onClick={() => setForwardingMsg(null)}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-1">
-              {formattedContacts.map(c => (
-                <button
-                  key={c.id}
-                  className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-accent-primary/10 transition-all text-left"
-                  onClick={() => handleForwardMessage(c.id)}
-                >
-                  <Avatar contact={c} size="md" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[0.95rem] font-semibold text-text-primary truncate">{c.name}</p>
-                    <p className="text-[0.75rem] text-text-muted truncate">{c.username}</p>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                  </div>
+      {/* ChatArea: full-screen on mobile when activeMobileView==='chat', flex-1 on md+ */}
+      <div className={`
+        ${
+          activeMobileView === 'chat'
+            ? 'flex'
+            : 'hidden'
+        }
+        md:flex
+        flex-1 h-full min-w-0
+      `}>
+        <ChatArea
+          contact={activeContact}
+          currentUser={currentUser}
+          conversation={activeConversationData}
+          onSendMessage={handleSendMessage}
+          onFinalizeFileMessage={handleFinalizeFileMessage}
+          onRemoveOptimisticMessage={handleRemoveOptimisticMessage}
+          onEditMessage={handleEditMessage}
+          onDeleteMessage={handleDeleteMessage}
+          onForward={(msg) => setForwardingMsg(msg)}
+          socket={socket}
+          onChatAction={handleChatAction}
+          onMobileBack={handleMobileBack}
+        />
+      </div>
+
+      {/* ProfilePanel: hidden on mobile & tablet, visible on lg+ */}
+      <div className="hidden lg:flex h-full flex-shrink-0">
+        <ProfilePanel contact={activeContact} />
+      </div>
+
+      {forwardingMsg && (() => {
+        const forwardableContacts = formattedContacts.filter(c =>
+          c._hasConversation &&
+          !c._isBlocked &&
+          !c.hasBlockedMe &&
+          c.id !== activeContactId
+        );
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
+            <div className="bg-bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-pop-in flex flex-col max-h-[80vh]">
+              <div className="p-6 border-b border-border-light flex items-center justify-between">
+                <div>
+                  <h3 className="text-[1.2rem] font-bold text-text-primary">Forward to...</h3>
+                  <p className="text-[0.75rem] text-text-muted mt-0.5">From your chat list</p>
+                </div>
+                <button className="p-2 rounded-full hover:bg-bg-primary text-text-muted" onClick={() => setForwardingMsg(null)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
-              ))}
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                {forwardableContacts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-text-muted gap-3">
+                    <div className="w-14 h-14 rounded-full bg-bg-primary flex items-center justify-center">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <p className="text-[0.9rem] font-medium">No other chats available</p>
+                    <p className="text-[0.78rem] text-center px-6">Start a conversation with someone else first to forward messages.</p>
+                  </div>
+                ) : (
+                  forwardableContacts.map(c => (
+                    <button
+                      key={c.id}
+                      className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-accent-primary/10 transition-all text-left"
+                      onClick={() => handleForwardMessage(c.id)}
+                    >
+                      <Avatar contact={c} size="md" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[0.95rem] font-semibold text-text-primary truncate">{c.name}</p>
+                        <p className="text-[0.75rem] text-text-muted truncate">{c.username}</p>
+                        {c._lastMessageText && c._lastMessageText !== 'No messages yet' && (
+                          <p className="text-[0.72rem] text-text-muted truncate mt-0.5 opacity-70">{c._lastMessageText}</p>
+                        )}
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {showProfileModal && (
         <UserProfileModal

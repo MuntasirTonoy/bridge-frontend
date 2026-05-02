@@ -99,7 +99,7 @@ export default function Sidebar({
   const archivedFiltered = contacts.filter((c) => c._isArchived);
 
   return (
-    <aside className="w-[280px] min-w-[280px] h-full bg-bg-sidebar flex flex-col border-r border-border-light overflow-hidden relative">
+    <aside className="w-full md:w-[280px] md:min-w-[280px] h-full bg-bg-sidebar flex flex-col border-r border-border-light overflow-hidden relative">
       {/* Header */}
       <div className="flex items-center justify-between pt-5 pb-3.5 px-4">
         <h1 className="text-[1.3rem] font-bold text-text-primary tracking-tight">

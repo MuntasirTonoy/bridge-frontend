@@ -19,9 +19,11 @@ export default function ChatArea({
   onForward,
   socket,
   onChatAction,
+  onMobileBack,
 }) {
   const [inputVal, setInputVal] = useState("");
   const [showMenu, setShowMenu] = useState(false);
+  const [showContactDetails, setShowContactDetails] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editText, setEditText] = useState("");
   const [msgMenuId, setMsgMenuId] = useState(null);
@@ -30,13 +32,18 @@ export default function ChatArea({
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // New states for multi-format support
+  // Multi-format support
   const [pendingFile, setPendingFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const timerRef = useRef(null);
+
+  // Voice player states per message
+  const [playingId, setPlayingId] = useState(null);
+  const [playProgress, setPlayProgress] = useState({});
+  const audioRefs = useRef({});
 
   const getOptimizedUrl = (url) => {
     if (!url || !url.includes("cloudinary.com")) return url;
@@ -281,7 +288,7 @@ export default function ChatArea({
 
   if (!contact || !conversation) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-bg-chat">
+      <div className="flex-1 w-full flex items-center justify-center bg-bg-chat">
         <div className="text-center text-text-muted">
           <div className="text-[3rem] mb-4">
             <Lottie
@@ -314,7 +321,56 @@ export default function ChatArea({
   const isBlocked = contact._isBlocked || contact.hasBlockedMe;
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-bg-chat overflow-hidden relative">
+    <div className="flex-1 w-full flex flex-col h-full bg-bg-chat overflow-hidden relative">
+
+      {/* Contact Details Modal */}
+      {showContactDetails && (
+        <div className="absolute inset-0 z-[300] flex items-end md:items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowContactDetails(false)}>
+          <div className="bg-bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-3xl shadow-2xl p-6 animate-slide-up md:animate-pop-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-[1rem] font-bold text-text-primary">Contact Details</h3>
+              <button className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:bg-bg-primary" onClick={() => setShowContactDetails(false)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div className="flex flex-col items-center gap-3 mb-6">
+              <Avatar contact={contact} size="xl" />
+              <div className="text-center">
+                <p className="text-[1.1rem] font-bold text-text-primary">{contact.name}</p>
+                {contact.username && <p className="text-[0.8rem] text-text-muted">@{contact.username}</p>}
+              </div>
+              <span className={`text-[0.75rem] font-semibold px-3 py-1 rounded-full ${
+                contact.isOnline ? 'bg-green-500/10 text-green-500' : 'bg-bg-primary text-text-muted'
+              }`}>
+                {contact.isOnline ? '● Online' : '● Offline'}
+              </span>
+            </div>
+            {contact.email && (
+              <div className="flex items-center gap-3 py-3 border-t border-border-light">
+                <div className="w-9 h-9 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary shrink-0">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </div>
+                <div>
+                  <p className="text-[0.7rem] text-text-muted">Email</p>
+                  <p className="text-[0.85rem] text-text-primary font-medium">{contact.email}</p>
+                </div>
+              </div>
+            )}
+            {contact.bio && (
+              <div className="flex items-start gap-3 py-3 border-t border-border-light">
+                <div className="w-9 h-9 rounded-full bg-accent-primary/10 flex items-center justify-center text-accent-primary shrink-0 mt-0.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <div>
+                  <p className="text-[0.7rem] text-text-muted">About</p>
+                  <p className="text-[0.85rem] text-text-primary">{contact.bio}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Pending File Preview Overlay */}
       {pendingFile && (
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6 animate-fade-in">
@@ -395,8 +451,21 @@ export default function ChatArea({
       )}
 
       {/* Chat Header */}
-      <div className="flex items-center justify-between py-3 px-5 bg-bg-white border-b border-border-light shadow-sm z-10">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between py-3 px-3 md:px-5 bg-bg-white border-b border-border-light shadow-sm z-10">
+        <div className="flex items-center gap-2 md:gap-3">
+          {/* Back button - mobile only */}
+          {onMobileBack && (
+            <button
+              className="md:hidden w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:bg-bg-primary shrink-0"
+              onClick={onMobileBack}
+              title="Back"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+            </button>
+          )}
           <Avatar contact={contact} size="md" />
           <div className="flex flex-col">
             <span className="text-[0.95rem] font-semibold text-text-primary">
@@ -456,50 +525,36 @@ export default function ChatArea({
               </svg>
             </button>
             {showMenu && (
-              <div className="absolute top-full right-0 mt-2 bg-bg-white border border-border-light rounded-xl shadow-lg w-40 p-1.5 z-[100] animate-slide-down">
+              <div className="absolute top-full right-0 mt-2 bg-bg-white border border-border-light rounded-xl shadow-lg w-44 p-1.5 z-[100] animate-slide-down">
+                <button
+                  className="w-full py-2 px-3 rounded-lg flex items-center gap-2.5 text-[0.8rem] text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary"
+                  onClick={() => { setShowContactDetails(true); setShowMenu(false); }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                  Contact Details
+                </button>
                 <button
                   className="w-full py-2 px-3 rounded-lg flex items-center gap-2.5 text-[0.8rem] text-text-secondary hover:bg-accent-primary/10 hover:text-text-primary"
                   onClick={handleArchive}
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     {contact._isArchived ? (
                       <path d="M3 8V4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4M21 8H3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8zM10 12l2 2 2-2" />
                     ) : (
-                      <>
-                        <polyline points="21 8 21 21 3 21 3 8" />
-                        <rect x="1" y="3" width="22" height="5" />
-                        <line x1="10" y1="12" x2="14" y2="12" />
-                      </>
+                      <><polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" /></>
                     )}
                   </svg>
                   {contact._isArchived ? "Unarchive Chat" : "Archive Chat"}
                 </button>
                 <button
-                  className={`w-full py-2 px-3 rounded-lg flex items-center gap-2.5 text-[0.8rem] text-text-secondary ${contact._isBlocked ? "hover:bg-accent-primary/10" : "text-[#e05757] hover:bg-[#e05757]/10"}`}
+                  className={`w-full py-2 px-3 rounded-lg flex items-center gap-2.5 text-[0.8rem] ${contact._isBlocked ? "text-text-secondary hover:bg-accent-primary/10" : "text-[#e05757] hover:bg-[#e05757]/10"}`}
                   onClick={handleBlock}
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     {contact._isBlocked ? (
                       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                     ) : (
-                      <>
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                      </>
+                      <><circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" /></>
                     )}
                   </svg>
                   {contact._isBlocked ? "Unblock Contact" : "Block Contact"}
@@ -508,14 +563,7 @@ export default function ChatArea({
                   className="w-full py-2 px-3 rounded-lg flex items-center gap-2.5 text-[0.8rem] text-[#e05757] hover:bg-[#e05757]/10"
                   onClick={handleDelete}
                 >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                     <line x1="10" y1="11" x2="10" y2="17" />
@@ -530,7 +578,7 @@ export default function ChatArea({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-8 py-6 flex flex-col gap-1">
+      <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 flex flex-col gap-1">
         {grouped.map((item, idx) => {
           if (item.type === "date")
             return (
@@ -656,18 +704,80 @@ export default function ChatArea({
                       </div>
                     )}
                     {msg.fileType === "voice" && (
-                      <div
-                        className={`mb-2 w-full min-w-[200px] relative ${msg.isUploading ? "opacity-60" : ""}`}
-                      >
-                        <audio
-                          controls
-                          className="w-full h-8 scale-90 origin-left"
-                        >
-                          <source src={msg.fileUrl} type="audio/webm" />
-                        </audio>
-                        {msg.isUploading && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-white/5">
-                            <div className="w-5 h-5 border-2 border-accent-primary/30 border-t-accent-primary rounded-full animate-spin"></div>
+                      <div className={`mb-1 w-full min-w-[220px] relative ${msg.isUploading ? "opacity-60" : ""}`}>
+                        {msg.isUploading ? (
+                          <div className="flex items-center gap-3 py-1">
+                            <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+                              <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                            </div>
+                            <div className="flex items-end gap-[3px] h-6">
+                              {[4,7,5,9,6,8,4,7,5,6,8,5].map((h,i) => (
+                                <div key={i} style={{height:`${h*2}px`}} className="w-[3px] rounded-full bg-white/40 animate-pulse" />
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 py-1">
+                            <button
+                              className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${isMine ? 'bg-white/25 hover:bg-white/35 text-white' : 'bg-accent-primary/15 hover:bg-accent-primary/25 text-accent-primary'}`}
+                              onClick={() => {
+                                const audio = audioRefs.current[msg.id];
+                                if (!audio) return;
+                                if (playingId === msg.id) {
+                                  audio.pause();
+                                  setPlayingId(null);
+                                } else {
+                                  Object.values(audioRefs.current).forEach(a => a && a.pause());
+                                  setPlayingId(msg.id);
+                                  audio.play();
+                                }
+                              }}
+                            >
+                              {playingId === msg.id ? (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                              ) : (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                              )}
+                            </button>
+                            <div className="flex-1 flex flex-col gap-1 min-w-0">
+                              <div className="flex items-end gap-[2.5px] h-7 cursor-pointer"
+                                onClick={() => {
+                                  const audio = audioRefs.current[msg.id];
+                                  if (!audio || !audio.duration) return;
+                                  const pct = playProgress[msg.id] || 0;
+                                  audio.currentTime = audio.duration * pct;
+                                }}
+                              >
+                                {[3,5,8,6,9,7,5,8,4,6,9,5,7,4,6,8,5,9,6,4].map((h,i) => {
+                                  const pct = playProgress[msg.id] || 0;
+                                  const filled = i / 20 < pct;
+                                  return (
+                                    <div key={i} style={{height:`${h*2.5}px`}}
+                                      className={`flex-1 rounded-full transition-colors ${filled ? (isMine ? 'bg-white' : 'bg-accent-primary') : (isMine ? 'bg-white/35' : 'bg-accent-primary/30')}`}
+                                    />
+                                  );
+                                })}
+                              </div>
+                              <span className={`text-[0.62rem] ${isMine ? 'text-white/60' : 'text-text-muted'}`}>
+                                {(() => {
+                                  const a = audioRefs.current[msg.id];
+                                  const dur = a?.duration || 0;
+                                  const cur = (playProgress[msg.id] || 0) * dur;
+                                  const fmt = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+                                  return playingId === msg.id ? fmt(cur) : fmt(dur);
+                                })()}
+                              </span>
+                            </div>
+                            <audio
+                              ref={el => { if(el) audioRefs.current[msg.id]=el; }}
+                              src={msg.fileUrl}
+                              onTimeUpdate={e => {
+                                const a = e.target;
+                                if(a.duration) setPlayProgress(p=>({...p,[msg.id]:a.currentTime/a.duration}));
+                              }}
+                              onEnded={() => { setPlayingId(null); setPlayProgress(p=>({...p,[msg.id]:0})); }}
+                              className="hidden"
+                            />
                           </div>
                         )}
                       </div>
@@ -765,33 +875,40 @@ export default function ChatArea({
             </div>
           );
         })}
-        {isRecording && (
-          <div className="flex items-center gap-4 bg-bg-white border-t border-border-light px-8 py-4 animate-slide-up">
-            <div className="flex items-center gap-2 text-accent-primary animate-pulse">
-              <span className="w-3 h-3 bg-accent-primary rounded-full" />
-              <span className="text-[0.9rem] font-bold">
-                Recording... {formatRecordingTime(recordingTime)}
-              </span>
-            </div>
-            <button
-              className="ml-auto p-2.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all"
-              onClick={stopRecording}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <rect x="6" y="6" width="12" height="12" rx="2" />
-              </svg>
-            </button>
-          </div>
-        )}
         <div ref={bottomRef} />
       </div>
+
+      {isRecording && (
+        <div className="flex items-center gap-3 bg-bg-white border-t border-border-light px-4 md:px-5 py-3 animate-slide-up">
+          <button
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all shrink-0"
+            onClick={() => { if(mediaRecorder && isRecording){ mediaRecorder.stop(); setIsRecording(false); clearInterval(timerRef.current); setPendingFile(null); setPreviewUrl(null); } }}
+            title="Cancel"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <div className="flex-1 flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shrink-0" />
+            <div className="flex-1 flex items-end gap-[3px] h-7">
+              {[4,7,5,9,6,8,4,7,5,9,6,7].map((h,i) => (
+                <div key={i} style={{height:`${h*2.5}px`,animationDelay:`${i*0.07}s`}}
+                  className="flex-1 rounded-full bg-accent-primary/60 animate-pulse"
+                />
+              ))}
+            </div>
+            <span className="text-[0.85rem] font-semibold text-red-500 shrink-0 tabular-nums">
+              {formatRecordingTime(recordingTime)}
+            </span>
+          </div>
+          <button
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-accent-primary text-white hover:bg-accent-dark transition-all shadow-md shrink-0"
+            onClick={stopRecording}
+            title="Send voice message"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      )}
 
       {!isBlocked && !isRecording && (
         <div className="flex items-center gap-3 pt-3 pb-3.5 px-5 bg-bg-white border-t border-border-light">
