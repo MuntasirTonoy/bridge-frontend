@@ -1,23 +1,27 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email", placeholder: "you@example.com" },
-        password: { label: "Password", type: "password" }
+        email: {
+          label: "Email",
+          type: "email",
+          placeholder: "you@example.com",
+        },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         try {
           // Use native fetch instead of the axios instance to avoid
           // circular getSession() calls from the interceptor
           const res = await fetch(`${API_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,
@@ -37,8 +41,8 @@ export const authOptions = {
         } catch (error) {
           throw new Error(error.message || "Invalid credentials");
         }
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
@@ -60,7 +64,7 @@ export const authOptions = {
       session.user.email = token.email;
       session.user.profilePic = token.profilePic;
       return session;
-    }
+    },
   },
   pages: {
     signIn: "/",

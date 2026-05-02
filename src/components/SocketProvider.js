@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
-import { useSession } from 'next-auth/react';
+import { createContext, useContext, useEffect, useState } from "react";
+import { io } from "socket.io-client";
+import { useSession } from "next-auth/react";
 
 const SocketContext = createContext(null);
 
@@ -14,16 +14,16 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     if (!session?.user?.id) return;
 
-    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000', {
-      transports: ['websocket', 'polling'],
+    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
+      transports: ["websocket", "polling"],
     });
 
-    newSocket.on('connect', () => {
-      console.log('Socket connected:', newSocket.id);
-      newSocket.emit('join', session.user.id);
+    newSocket.on("connect", () => {
+      console.log("Socket connected:", newSocket.id);
+      newSocket.emit("join", session.user.id);
     });
 
-    newSocket.on('onlineUsers', (users) => {
+    newSocket.on("onlineUsers", (users) => {
       setOnlineUsers(users);
     });
 

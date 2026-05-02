@@ -1,9 +1,9 @@
-import axios from 'axios';
+import axios from "axios";
 
-import { getSession } from 'next-auth/react';
+import { getSession } from "next-auth/react";
 
 const instance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
 // Add a request interceptor to attach token
@@ -17,7 +17,7 @@ instance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 export default instance;
