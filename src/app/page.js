@@ -199,15 +199,26 @@ function AuthPageContent() {
     if (!signupForm.name.trim()) e.name = "Name required.";
     if (!signupForm.username.trim()) e.username = "Username required.";
     if (!signupForm.email.trim()) e.email = "Email required.";
-    if (signupForm.password.length < 8) e.password = "8+ characters.";
-    if (signupForm.confirm !== signupForm.password) e.confirm = "Mismatch.";
+    if (signupForm.password.length < 8)
+      e.password = "Password must be at least 8 characters.";
+    if (signupForm.confirm !== signupForm.password)
+      e.confirm = "Passwords do not match.";
     return e;
   };
+
+  const passwordsMismatch =
+    signupForm.confirm.length > 0 && signupForm.confirm !== signupForm.password;
 
   const handleSignup = async (e) => {
     e.preventDefault();
     const errs = validateSignup();
     setSignupErrors(errs);
+    if (errs.confirm) {
+      toast.error("Passwords do not match. Please check both fields.", {
+        icon: "🔒",
+        duration: 4000,
+      });
+    }
     if (Object.keys(errs).length > 0) return;
 
     setLoading(true);
@@ -291,16 +302,29 @@ function AuthPageContent() {
         {/* Form Side (Right) */}
         <div className="flex-1 flex flex-col p-8 lg:p-16 justify-center relative">
           <div className="w-full max-w-[380px] mx-auto">
-            <header className="mb-10 text-center">
-              <h2 className="text-[2.2rem] font-bold text-[#1a2332] dark:text-[#e8edf4] mb-1">
-                {isLogin ? "Hello Again!" : "Welcome!"}
+            {/* Unified header — all screen sizes */}
+            <div className="text-center mb-8">
+              {/* Badge */}
+              <div className="flex justify-center mb-3">
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.72rem] font-semibold ${
+                    isLogin
+                      ? "bg-[#3d5a73]/10 text-[#3d5a73] dark:bg-[#4f7391]/20 dark:text-[#7aaecf]"
+                      : "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400"
+                  }`}
+                >
+                  {isLogin ? "👋 Welcome back" : "✨ New account"}
+                </span>
+              </div>
+              <h2 className="text-[1.9rem] font-black tracking-tight text-[#1a2332] dark:text-[#e8edf4] leading-tight">
+                {isLogin ? "Sign in to Bridge" : "Join Bridge"}
               </h2>
-              <p className="text-[#5a6a7a] dark:text-[#9aa5b8] text-[0.9rem] font-medium">
+              <p className="text-[0.88rem] text-[#5a6a7a] dark:text-[#9aa5b8] font-medium mt-1.5 max-w-[280px] mx-auto leading-snug">
                 {isLogin
-                  ? "Let's get started with your journey"
-                  : "Create an account to start chatting"}
+                  ? "Enter your credentials to continue chatting"
+                  : "Create your account and start connecting"}
               </p>
-            </header>
+            </div>
 
             <div className="relative">
               {/* Login Form */}
@@ -310,7 +334,7 @@ function AuthPageContent() {
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-4">
                     <input
-                      className="w-full p-4 rounded-xl bg-white dark:bg-[#252c3d] border-none text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa]"
+                      className="w-full p-4 rounded-xl bg-[#eef1f5] dark:bg-[#252c3d] border border-[#dde3ea] dark:border-transparent text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa] outline-none"
                       type="email"
                       placeholder="Email"
                       value={email}
@@ -318,7 +342,7 @@ function AuthPageContent() {
                     />
                     <div className="relative">
                       <input
-                        className="w-full p-4 pr-12 rounded-xl bg-white dark:bg-[#252c3d] border-none text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa]"
+                        className="w-full p-4 pr-12 rounded-xl bg-[#eef1f5] dark:bg-[#252c3d] border border-[#dde3ea] dark:border-transparent text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa] outline-none"
                         type={showPassword ? "text" : "password"}
                         placeholder="Password"
                         value={password}
@@ -377,8 +401,7 @@ function AuthPageContent() {
 
                 <div className="mt-8">
                   <div className="relative flex items-center justify-center mb-6">
-                    <div className="absolute w-full border-t border-[#dde3ea] dark:border-[#2e3650]"></div>
-                    <span className="relative bg-[#f0f2f5] dark:bg-[#222736] px-4 text-[0.8rem] text-[#8a9aaa] font-medium transition-colors">
+                    <span className="relative px-4 text-[0.8rem] text-[#8a9aaa] font-medium transition-colors">
                       Or continue with
                     </span>
                   </div>
@@ -411,7 +434,7 @@ function AuthPageContent() {
               >
                 <form onSubmit={handleSignup} className="space-y-3">
                   <input
-                    className="w-full p-3.5 rounded-xl bg-white dark:bg-[#252c3d] border-none text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa]"
+                    className="w-full p-3.5 rounded-xl bg-[#eef1f5] dark:bg-[#252c3d] border border-[#dde3ea] dark:border-transparent text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa] outline-none"
                     type="text"
                     placeholder="Full Name"
                     value={signupForm.name}
@@ -421,7 +444,7 @@ function AuthPageContent() {
                   />
                   <div className="relative">
                     <input
-                      className="w-full p-3.5 rounded-xl bg-white dark:bg-[#252c3d] border-none text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa]"
+                      className="w-full p-3.5 rounded-xl bg-[#eef1f5] dark:bg-[#252c3d] border border-[#dde3ea] dark:border-transparent text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa] outline-none"
                       type="text"
                       placeholder="Username"
                       value={signupForm.username}
@@ -440,7 +463,7 @@ function AuthPageContent() {
                     )}
                   </div>
                   <input
-                    className="w-full p-3.5 rounded-xl bg-white dark:bg-[#252c3d] border-none text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa]"
+                    className="w-full p-3.5 rounded-xl bg-[#eef1f5] dark:bg-[#252c3d] border border-[#dde3ea] dark:border-transparent text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa] outline-none"
                     type="email"
                     placeholder="Email"
                     value={signupForm.email}
@@ -450,16 +473,26 @@ function AuthPageContent() {
                   />
                   <div className="relative">
                     <input
-                      className="w-full p-3.5 pr-12 rounded-xl bg-white dark:bg-[#252c3d] border-none text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa]"
+                      className={`w-full p-3.5 pr-12 rounded-xl border text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 placeholder:text-[#8a9aaa] outline-none ${
+                        passwordsMismatch || signupErrors.password
+                          ? "bg-[#eef1f5] dark:bg-[#252c3d] border-red-400 focus:ring-red-300/40"
+                          : "bg-[#eef1f5] dark:bg-[#252c3d] border-[#dde3ea] dark:border-transparent focus:ring-accent-primary/20"
+                      }`}
                       type={showPassword ? "text" : "password"}
                       placeholder="Password"
                       value={signupForm.password}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setSignupForm({
                           ...signupForm,
                           password: e.target.value,
-                        })
-                      }
+                        });
+                        if (signupErrors.confirm || signupErrors.password)
+                          setSignupErrors((prev) => ({
+                            ...prev,
+                            confirm: null,
+                            password: null,
+                          }));
+                      }}
                     />
                     <button
                       type="button"
@@ -468,19 +501,33 @@ function AuthPageContent() {
                     >
                       {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                     </button>
+                    {signupErrors.password && (
+                      <p className="mt-1 text-[0.75rem] text-red-500 font-medium flex items-center gap-1">
+                        <span>⚠</span> {signupErrors.password}
+                      </p>
+                    )}
                   </div>
                   <div className="relative">
                     <input
-                      className="w-full p-3.5 pr-12 rounded-xl bg-white dark:bg-[#252c3d] border-none text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 focus:ring-accent-primary/20 placeholder:text-[#8a9aaa]"
+                      className={`w-full p-3.5 pr-12 rounded-xl border text-[0.95rem] text-[#1a2332] dark:text-[#e8edf4] shadow-sm transition-all focus:ring-2 placeholder:text-[#8a9aaa] outline-none ${
+                        passwordsMismatch || signupErrors.confirm
+                          ? "bg-[#eef1f5] dark:bg-[#252c3d] border-red-400 focus:ring-red-300/40"
+                          : "bg-[#eef1f5] dark:bg-[#252c3d] border-[#dde3ea] dark:border-transparent focus:ring-accent-primary/20"
+                      }`}
                       type={showConfirm ? "text" : "password"}
                       placeholder="Confirm Password"
                       value={signupForm.confirm}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setSignupForm({
                           ...signupForm,
                           confirm: e.target.value,
-                        })
-                      }
+                        });
+                        if (signupErrors.confirm)
+                          setSignupErrors((prev) => ({
+                            ...prev,
+                            confirm: null,
+                          }));
+                      }}
                     />
                     <button
                       type="button"
@@ -489,6 +536,11 @@ function AuthPageContent() {
                     >
                       {showConfirm ? <EyeOffIcon /> : <EyeIcon />}
                     </button>
+                    {(passwordsMismatch || signupErrors.confirm) && (
+                      <p className="mt-1 text-[0.75rem] text-red-500 font-medium flex items-center gap-1 animate-pulse">
+                        <span>⚠</span> Passwords do not match.
+                      </p>
+                    )}
                   </div>
 
                   <button
@@ -502,8 +554,7 @@ function AuthPageContent() {
 
                 <div className="mt-8">
                   <div className="relative flex items-center justify-center mb-6">
-                    <div className="absolute w-full border-t border-[#dde3ea] dark:border-[#2e3650]"></div>
-                    <span className="relative bg-[#f0f2f5] dark:bg-[#222736] px-4 text-[0.8rem] text-[#8a9aaa] font-medium transition-colors">
+                    <span className="relative px-4 text-[0.8rem] text-[#8a9aaa] font-medium transition-colors">
                       Or continue with
                     </span>
                   </div>
@@ -539,14 +590,18 @@ function AuthPageContent() {
 
 export default function AuthPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen w-full flex items-center justify-center bg-[#f0f2f5] dark:bg-[#1a2332]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-accent-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-[#5a6a7a] dark:text-[#9aa5b8] font-medium">Loading...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen w-full flex items-center justify-center bg-[#f0f2f5] dark:bg-[#1a2332]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-accent-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-[#5a6a7a] dark:text-[#9aa5b8] font-medium">
+              Loading...
+            </p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <AuthPageContent />
     </Suspense>
   );
