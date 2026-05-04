@@ -42,6 +42,10 @@ module.exports = {
           '0%': { opacity: '0', transform: 'scale(0.9) translateY(-10px)' },
           '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
         },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
         'fadeIn': {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
@@ -51,6 +55,7 @@ module.exports = {
         'slide-up': 'slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
         'slide-down': 'slide-down 0.2s ease',
         'pop-in': 'pop-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        'fade-in': 'fade-in 0.3s ease-out',
         'fadeIn': 'fadeIn 0.2s ease',
       }
     },

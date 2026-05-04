@@ -888,6 +888,16 @@ export default function ChatArea({
             </div>
           );
         })}
+        {conversation.isTyping && (
+          <div className="flex items-end gap-2 mb-4 animate-fade-in">
+            <Avatar contact={contact} size="sm" />
+            <div className="bg-bubble-received text-text-primary py-[11px] px-[15px] rounded-[18px] rounded-bl-[4px] shadow-sm flex items-center gap-1">
+              <div className="typing-dot" />
+              <div className="typing-dot" />
+              <div className="typing-dot" />
+            </div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
