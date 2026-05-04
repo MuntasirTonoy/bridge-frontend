@@ -473,9 +473,11 @@ export default function ChatArea({
             </span>
             {!isBlocked && (
               <span
-                className={`text-[0.72rem] font-medium ${contact.isOnline ? "text-online-dot" : "text-text-muted"}`}
+                className={`text-[0.72rem] font-medium ${conversation.isTyping ? "text-accent-primary animate-pulse" : contact.isOnline ? "text-online-dot" : "text-text-muted"}`}
               >
-                {contact.isOnline ? (
+                {conversation.isTyping ? (
+                  "typing..."
+                ) : contact.isOnline ? (
                   "● Online"
                 ) : (
                   <>
@@ -790,9 +792,20 @@ export default function ChatArea({
                         </span>
                       )}
                       <span
-                        className={`text-[0.65rem] ${isMine ? "text-white/60" : "text-text-muted"}`}
+                        className={`text-[0.65rem] flex items-center gap-1 ${isMine ? "text-white/60" : "text-text-muted"}`}
                       >
                         {msg.time}
+                        {isMine && (
+                          <span className="ml-0.5 flex items-center">
+                            {msg.isOptimistic ? (
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            ) : msg.isRead ? (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 7 17l-5-5" /><path d="m22 10-7.5 7.5L13 16" /></svg>
+                            ) : (
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                            )}
+                          </span>
+                        )}
                       </span>
                     </div>
                   </>

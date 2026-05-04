@@ -1,10 +1,15 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const authOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -17,8 +22,6 @@ export const authOptions = {
       },
       async authorize(credentials) {
         try {
-          // Use native fetch instead of the axios instance to avoid
-          // circular getSession() calls from the interceptor
           const res = await fetch(`${API_URL}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -45,14 +48,47 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      if (account.provider === "google") {
+        try {
+          const res = await fetch(`${API_URL}/auth/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name,
+              image: user.image,
+            }),
+          });
+
+          const data = await res.json();
+
+          if (res.ok && data.token) {
+            user.token = data.token;
+            user._id = data._id;
+            user.username = data.username;
+            user.profilePic = data.profilePic;
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error("Error during Google sign in", error);
+          return false;
+        }
+      }
+      return true;
+    },
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.accessToken = user.token;
-        token.id = user._id;
+        token.id = user._id || user.id;
         token.name = user.name;
         token.username = user.username;
         token.email = user.email;
-        token.profilePic = user.profilePic;
+        token.profilePic = user.profilePic || user.image;
+      }
+      if (trigger === "update" && session?.user) {
+        return { ...token, ...session.user };
       }
       return token;
     },
@@ -72,7 +108,6 @@ export const authOptions = {
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours (refresh the session every 24h)
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

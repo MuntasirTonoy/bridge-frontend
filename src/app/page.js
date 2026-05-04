@@ -405,7 +405,10 @@ function AuthPageContent() {
                       Or continue with
                     </span>
                   </div>
-                  <button className="w-full h-12 flex items-center justify-center gap-3 bg-white dark:bg-[#252c3d] rounded-xl shadow-sm border border-[#dde3ea] dark:border-[#2e3650] transition-all hover:bg-[#f8f9fa] dark:hover:bg-[#2c344a] hover:translate-y-[-2px] hover:shadow-md group">
+                  <button 
+                    onClick={() => signIn("google")}
+                    className="w-full h-12 flex items-center justify-center gap-3 bg-white dark:bg-[#252c3d] rounded-xl shadow-sm border border-[#dde3ea] dark:border-[#2e3650] transition-all hover:bg-[#f8f9fa] dark:hover:bg-[#2c344a] hover:translate-y-[-2px] hover:shadow-md group"
+                  >
                     <img
                       src="https://www.svgrepo.com/show/355037/google.svg"
                       alt="Google"
@@ -558,7 +561,10 @@ function AuthPageContent() {
                       Or continue with
                     </span>
                   </div>
-                  <button className="w-full h-12 flex items-center justify-center gap-3 bg-white dark:bg-[#252c3d] rounded-xl shadow-sm border border-[#dde3ea] dark:border-[#2e3650] transition-all hover:bg-[#f8f9fa] dark:hover:bg-[#2c344a] hover:translate-y-[-2px] hover:shadow-md group">
+                  <button 
+                    onClick={() => signIn("google")}
+                    className="w-full h-12 flex items-center justify-center gap-3 bg-white dark:bg-[#252c3d] rounded-xl shadow-sm border border-[#dde3ea] dark:border-[#2e3650] transition-all hover:bg-[#f8f9fa] dark:hover:bg-[#2c344a] hover:translate-y-[-2px] hover:shadow-md group"
+                  >
                     <img
                       src="https://www.svgrepo.com/show/355037/google.svg"
                       alt="Google"

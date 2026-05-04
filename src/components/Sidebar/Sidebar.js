@@ -165,7 +165,7 @@ export default function Sidebar({
           return (
             <button
               key={contact.id}
-              className={`w-full flex items-center gap-[11px] p-2.5 rounded-xl mb-[1px] transition-all cursor-pointer text-left bg-transparent border-l-4 ${isActive ? "bg-gray-300 dark:bg-gray-700 border-accent-primary" : "border-transparent hover:bg-accent-primary/5"}`}
+              className={`w-full flex items-center gap-[11px] p-2.5 rounded-xl mb-[1px] transition-all cursor-pointer text-left ${isActive ? "bg-gray-200/80 dark:bg-white/10 shadow-sm" : "bg-transparent hover:bg-gray-100 dark:hover:bg-white/5"}`}
               onClick={() => onSelect(contact.id)}
             >
               <Avatar contact={contact} size="md" />
@@ -179,9 +179,14 @@ export default function Sidebar({
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[0.76rem] text-text-secondary truncate block max-w-[185px]">
+                  <span className={`text-[0.76rem] truncate block max-w-[185px] ${contact.unreadCount > 0 ? "text-text-primary font-semibold" : "text-text-secondary"}`}>
                     {text}
                   </span>
+                  {contact.unreadCount > 0 && (
+                    <span className="bg-accent-primary text-white text-[0.65rem] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center ml-2">
+                      {contact.unreadCount}
+                    </span>
+                  )}
                 </div>
               </div>
             </button>
@@ -337,7 +342,10 @@ export default function Sidebar({
                 </div>
               </button>
               <div className="h-[1px] bg-border-light mx-2 my-1" />
-              <button className="w-full py-2 px-3 rounded-lg flex items-center gap-2.5 text-[0.8rem] text-text-secondary transition-all hover:bg-accent-primary/10 hover:text-text-primary cursor-pointer text-left">
+              <Link
+                href="/account-setting"
+                className="w-full py-2 px-3 rounded-lg flex items-center gap-2.5 text-[0.8rem] text-text-secondary transition-all hover:bg-accent-primary/10 hover:text-text-primary cursor-pointer text-left"
+              >
                 <svg
                   width="14"
                   height="14"
@@ -352,7 +360,7 @@ export default function Sidebar({
                   <circle cx="12" cy="7" r="4" />
                 </svg>
                 Account Settings
-              </button>
+              </Link>
               <button className="w-full py-2 px-3 rounded-lg flex items-center gap-2.5 text-[0.8rem] text-text-secondary transition-all hover:bg-accent-primary/10 hover:text-text-primary cursor-pointer text-left">
                 <svg
                   width="14"

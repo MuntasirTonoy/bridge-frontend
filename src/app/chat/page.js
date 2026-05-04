@@ -113,11 +113,16 @@ export default function ChatPage() {
             fileUrl: m.fileUrl,
             fileType: m.fileType,
             filePublicId: m.filePublicId,
+            isRead: m.isRead,
             time: formatTime(m.createdAt),
             date: formatDate(m.createdAt),
             rawDate: new Date(m.createdAt)
           }));
           setActiveMessages(formatted);
+
+          if (socket) {
+            socket.emit('markMessagesRead', { senderId: activeContactId, receiverId: session.user.id });
+          }
         } catch (error) {
           console.error('Failed to fetch messages:', error);
         }
@@ -136,6 +141,10 @@ export default function ChatPage() {
         (message.senderId === activeContactId && message.receiverId === session?.user?.id) ||
         (message.senderId === session?.user?.id && message.receiverId === activeContactId)
       ) {
+        if (message.senderId === activeContactId) {
+          socket.emit('markMessagesRead', { senderId: activeContactId, receiverId: session?.user?.id });
+        }
+
         // Check if message already exists (to avoid duplicates from optimistic UI)
         setActiveMessages(prev => {
           if (prev.some(m => m.id === message._id || (m.isOptimistic && m.text === message.text))) {
@@ -143,6 +152,7 @@ export default function ChatPage() {
               ...m,
               id: message._id,
               isOptimistic: false,
+              isRead: message.isRead,
               time: formatTime(message.createdAt)
             } : m);
           }
@@ -153,14 +163,16 @@ export default function ChatPage() {
             fileUrl: message.fileUrl,
             fileType: message.fileType,
             filePublicId: message.filePublicId,
+            isRead: message.senderId === session?.user?.id ? message.isRead : true,
             time: formatTime(message.createdAt || new Date()),
             date: formatDate(message.createdAt || new Date()),
           }];
         });
       }
 
-      // Update conversations list
+      // Update conversations list and contacts (to capture new users)
       axios.get('/chats/conversations').then(res => setConversations(res.data)).catch(console.error);
+      axios.get('/auth/users').then(res => setContacts(res.data)).catch(console.error);
     };
 
     const handleUpdateMessage = (updatedMsg) => {
@@ -187,11 +199,20 @@ export default function ChatPage() {
       if (senderId === activeContactId) setIsTyping(false);
     };
 
+    const handleMessagesRead = ({ receiverId }) => {
+      if (receiverId === activeContactId) {
+        setActiveMessages(prev => prev.map(m => m.senderId === 'me' ? { ...m, isRead: true } : m));
+        // Refresh conversations to potentially clear unread badges (if implemented)
+        axios.get('/chats/conversations').then(res => setConversations(res.data)).catch(console.error);
+      }
+    };
+
     socket.on('receiveMessage', handleReceiveMessage);
     socket.on('messageUpdated', handleUpdateMessage);
     socket.on('messageDeleted', handleRemoveMessage);
     socket.on('userTyping', handleUserTyping);
     socket.on('userStopTyping', handleUserStopTyping);
+    socket.on('messagesRead', handleMessagesRead);
 
     return () => {
       socket.off('receiveMessage', handleReceiveMessage);
@@ -199,6 +220,7 @@ export default function ChatPage() {
       socket.off('messageDeleted', handleRemoveMessage);
       socket.off('userTyping', handleUserTyping);
       socket.off('userStopTyping', handleUserStopTyping);
+      socket.off('messagesRead', handleMessagesRead);
     };
   }, [socket, activeContactId, session?.user?.id]);
 
@@ -251,6 +273,7 @@ export default function ChatPage() {
       _lastMessageTime: conv?.lastMessage ? formatTime(conv.lastMessage.createdAt) : "",
       _lastUpdated: conv?.lastUpdated || 0,
       _hasConversation: !!conv,
+      unreadCount: conv?.unreadCount || 0,
       _isArchived: archivedChatsIds.includes(c._id),
       _isBlocked: blockedUsersIds.includes(c._id),
       hasBlockedMe: c.hasBlockedMe
@@ -275,6 +298,7 @@ export default function ChatPage() {
       fileType: fileData.fileType || 'text',
       filePublicId: fileData.filePublicId,
       isUploading: fileData.isUploading || false,
+      isRead: false,
       time: formatTime(new Date()),
       date: formatDate(new Date()),
       isOptimistic: true
