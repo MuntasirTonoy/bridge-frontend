@@ -179,10 +179,10 @@ export default function Sidebar({
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={`text-[0.76rem] truncate block max-w-[185px] ${contact.unreadCount > 0 ? "text-text-primary font-semibold" : "text-text-secondary"}`}>
-                    {text}
+                  <span className={`text-[0.76rem] truncate block max-w-[185px] ${contact.isTyping ? "text-accent-primary animate-pulse font-medium" : contact.unreadCount > 0 ? "text-text-primary font-semibold" : "text-text-secondary"}`}>
+                    {contact.isTyping ? "typing..." : text}
                   </span>
-                  {contact.unreadCount > 0 && (
+                  {contact.unreadCount > 0 && !contact.isTyping && (
                     <span className="bg-accent-primary text-white text-[0.65rem] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center ml-2">
                       {contact.unreadCount}
                     </span>
@@ -599,8 +599,8 @@ export default function Sidebar({
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[0.76rem] text-text-secondary truncate block max-w-[185px]">
-                      {text}
+                    <span className={`text-[0.76rem] truncate block max-w-[185px] ${contact.isTyping ? "text-accent-primary animate-pulse font-medium" : "text-text-secondary"}`}>
+                      {contact.isTyping ? "typing..." : text}
                     </span>
                   </div>
                 </div>
