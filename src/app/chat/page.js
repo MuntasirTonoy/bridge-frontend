@@ -12,6 +12,57 @@ import ProfilePanel from "@/components/ProfilePanel/ProfilePanel";
 import UserProfileModal from "@/components/UserProfileModal/UserProfileModal";
 import { useSocket } from "@/components/SocketProvider";
 
+function ChatSkeleton() {
+  return (
+    <div className="flex h-screen bg-bg-primary overflow-hidden w-full">
+      {/* Sidebar Skeleton */}
+      <div className="w-full md:w-[280px] md:min-w-[280px] h-full bg-bg-sidebar flex flex-col border-r border-border-light overflow-hidden">
+        <div className="flex items-center justify-between pt-5 pb-3.5 px-4">
+          <div className="w-24 h-6 bg-border-light rounded-md animate-pulse"></div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-border-light animate-pulse"></div>
+            <div className="w-8 h-8 rounded-full bg-border-light animate-pulse"></div>
+          </div>
+        </div>
+        <div className="px-3.5 mb-4 mt-2">
+          <div className="w-full h-10 bg-border-light rounded-xl animate-pulse"></div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-2 space-y-2">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 p-2.5">
+              <div className="w-[46px] h-[46px] rounded-full bg-border-light animate-pulse shrink-0"></div>
+              <div className="flex-1 space-y-2">
+                <div className="w-24 h-4 bg-border-light rounded animate-pulse"></div>
+                <div className="w-32 h-3 bg-border-light rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Chat Area Skeleton */}
+      <div className="hidden md:flex flex-1 flex-col h-full bg-bg-chat relative">
+        <div className="h-[76px] w-full bg-bg-white border-b border-border-light flex items-center px-4 md:px-8 gap-4 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] z-10 shrink-0">
+          <div className="w-11 h-11 rounded-full bg-border-light animate-pulse shrink-0"></div>
+          <div className="space-y-2">
+            <div className="w-32 h-4 bg-border-light rounded animate-pulse"></div>
+            <div className="w-16 h-3 bg-border-light rounded animate-pulse"></div>
+          </div>
+        </div>
+        <div className="flex-1 p-6 flex flex-col gap-4">
+           <div className="self-end w-64 h-12 bg-border-light rounded-2xl rounded-tr-sm animate-pulse"></div>
+           <div className="self-start w-48 h-12 bg-border-light rounded-2xl rounded-tl-sm animate-pulse"></div>
+           <div className="self-end w-56 h-12 bg-border-light rounded-2xl rounded-tr-sm animate-pulse"></div>
+           <div className="self-start w-72 h-16 bg-border-light rounded-2xl rounded-tl-sm animate-pulse"></div>
+        </div>
+        <div className="p-4 bg-bg-white/80 backdrop-blur-xl border-t border-border-light">
+          <div className="h-[52px] bg-border-light rounded-2xl animate-pulse w-full"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatPage() {
   const router = useRouter();
   const { data: session, status, update } = useSession();
@@ -25,6 +76,7 @@ export default function ChatPage() {
   const [isDark, setIsDark] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [typingUsers, setTypingUsers] = useState({}); // { userId: boolean }
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const isInitialMount = useRef(true);
 
   const [archivedChatsIds, setArchivedChatsIds] = useState([]);
@@ -74,6 +126,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (status === "authenticated") {
       const fetchData = async () => {
+        setIsLoadingData(true);
         try {
           const [usersRes, convsRes, profileRes] = await Promise.all([
             axios.get("/auth/users"),
@@ -103,6 +156,8 @@ export default function ChatPage() {
         } catch (error) {
           console.error("Failed to fetch data:", error);
           toast.error("Failed to load chat data");
+        } finally {
+          setIsLoadingData(false);
         }
       };
       fetchData();
@@ -289,12 +344,8 @@ export default function ChatPage() {
     }
   }, [status, router]);
 
-  if (status === "loading") {
-    return (
-      <div className="flex justify-center items-center h-screen bg-bg-primary text-white">
-        Loading...
-      </div>
-    );
+  if (status === "loading" || (status === "authenticated" && isLoadingData)) {
+    return <ChatSkeleton />;
   }
 
   if (status === "unauthenticated") {
