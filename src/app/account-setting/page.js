@@ -210,9 +210,33 @@ export default function AccountSettingPage() {
                   <h3 className="text-[1.8rem] font-black text-text-primary mb-1">
                     Profile Information
                   </h3>
-                  <p className="text-text-muted text-[1rem] leading-relaxed mb-4">
-                    Control how others see you on Bridge. Changes are reflected instantly.
+                  <p className="text-text-muted text-[0.9rem] leading-relaxed mb-4">
+                    Control how others see you on Bridge. Choose a cartoon avatar or upload your own.
                   </p>
+                  
+                  {/* Predefined Avatars Grid */}
+                  <div className="flex flex-wrap gap-3 mb-6">
+                    {[
+                      'https://api.dicebear.com/7.x/adventurer/svg?seed=Felix',
+                      'https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka',
+                      'https://api.dicebear.com/7.x/adventurer/svg?seed=Milo',
+                      'https://api.dicebear.com/7.x/adventurer/svg?seed=Luna',
+                      'https://api.dicebear.com/7.x/adventurer/svg?seed=Charlie',
+                      'https://api.dicebear.com/7.x/adventurer/svg?seed=Zoe',
+                      'https://api.dicebear.com/7.x/adventurer/svg?seed=Jasper',
+                      'https://api.dicebear.com/7.x/adventurer/svg?seed=Bella'
+                    ].map((url, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setProfileData(prev => ({ ...prev, profilePic: url }))}
+                        className={`w-10 h-10 lg:w-12 lg:h-12 rounded-xl overflow-hidden border-2 transition-all hover:scale-110 active:scale-95 ${profileData.profilePic === url ? 'border-accent-primary ring-2 ring-accent-primary/20 scale-105' : 'border-transparent hover:border-accent-primary/50'}`}
+                      >
+                        <img src={url} alt={`Avatar ${idx}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="flex flex-wrap gap-2">
                     <span className="px-3 py-1 bg-bg-primary border border-border-light rounded-full text-[0.7rem] font-bold text-text-secondary uppercase">@{profileData.username}</span>
                     <span className="px-3 py-1 bg-bg-primary border border-border-light rounded-full text-[0.7rem] font-bold text-text-secondary uppercase">{session?.user?.email}</span>
