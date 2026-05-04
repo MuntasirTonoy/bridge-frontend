@@ -20,6 +20,9 @@ export default function ChatArea({
   socket,
   onChatAction,
   onMobileBack,
+  loadMoreMessages,
+  hasMoreMessages,
+  isLoadingMore,
 }) {
   const [inputVal, setInputVal] = useState("");
   const [showMenu, setShowMenu] = useState(false);
@@ -28,9 +31,16 @@ export default function ChatArea({
   const [editText, setEditText] = useState("");
   const [msgMenuId, setMsgMenuId] = useState(null);
   const bottomRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const loadMoreRef = useRef(null);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
+  const prevMessagesLength = useRef(0);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Maintain scroll position when prepending messages
+  const lastScrollHeight = useRef(0);
 
   // Multi-format support
   const [pendingFile, setPendingFile] = useState(null);
@@ -51,8 +61,52 @@ export default function ChatArea({
   };
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const currentLength = conversation?.messages?.length || 0;
+    const prevLength = prevMessagesLength.current;
+
+    // Only scroll to bottom if a NEW message was added at the end
+    // (i.e. length increased but we didn't just load old messages)
+    if (currentLength > prevLength) {
+      const lastMessage = conversation.messages[currentLength - 1];
+      const secondLastMessage = prevLength > 0 ? conversation.messages[prevLength - 1] : null;
+      
+      // If the last message is different from what was last, it's a new message
+      if (!secondLastMessage || lastMessage.id !== secondLastMessage.id) {
+         // If we are prepending (pagination), don't scroll to bottom
+         // If we are at page 1 and messages increased, it's likely a new message
+         if (currentLength - prevLength === 1 || prevLength === 0) {
+            bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+         } else {
+            // Prepending messages (pagination)
+            if (scrollContainerRef.current) {
+              const newScrollHeight = scrollContainerRef.current.scrollHeight;
+              scrollContainerRef.current.scrollTop = newScrollHeight - lastScrollHeight.current;
+            }
+         }
+      }
+    }
+    prevMessagesLength.current = currentLength;
   }, [conversation?.messages?.length, conversation?.isTyping]);
+
+  // Observer for infinite scroll
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasMoreMessages || isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          if (scrollContainerRef.current) {
+            lastScrollHeight.current = scrollContainerRef.current.scrollHeight;
+          }
+          loadMoreMessages();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasMoreMessages, isLoadingMore, loadMoreMessages]);
 
   useEffect(() => {
     const handleClose = () => {
@@ -473,11 +527,9 @@ export default function ChatArea({
             </span>
             {!isBlocked && (
               <span
-                className={`text-[0.72rem] font-medium ${conversation.isTyping ? "text-accent-primary animate-pulse" : contact.isOnline ? "text-online-dot" : "text-text-muted"}`}
+                className={`text-[0.72rem] font-medium ${contact.isOnline ? "text-online-dot" : "text-text-muted"}`}
               >
-                {conversation.isTyping ? (
-                  "typing..."
-                ) : contact.isOnline ? (
+                {contact.isOnline ? (
                   "● Online"
                 ) : (
                   <>
@@ -580,7 +632,21 @@ export default function ChatArea({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 flex flex-col gap-1">
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-4 md:px-8 py-6 flex flex-col gap-1"
+      >
+        {/* Pagination Trigger */}
+        {hasMoreMessages && (
+          <div ref={loadMoreRef} className="flex justify-center py-4 shrink-0">
+             {isLoadingMore ? (
+               <div className="w-6 h-6 border-2 border-accent-primary border-t-transparent rounded-full animate-spin"></div>
+             ) : (
+               <span className="text-text-muted text-[0.7rem] font-medium opacity-0">Loading more...</span>
+             )}
+          </div>
+        )}
+
         {grouped.map((item, idx) => {
           if (item.type === "date")
             return (

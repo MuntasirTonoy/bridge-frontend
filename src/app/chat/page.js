@@ -72,6 +72,9 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
   const [activeContactId, setActiveContactId] = useState(null);
   const [activeMessages, setActiveMessages] = useState([]);
+  const [chatPage, setChatPage] = useState(1);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const [isDark, setIsDark] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -168,11 +171,12 @@ export default function ChatPage() {
   useEffect(() => {
     if (activeContactId && status === "authenticated") {
       const fetchMessages = async () => {
+        setChatPage(1);
         try {
-          const res = await axios.get(`/chats/messages/${activeContactId}`);
+          const res = await axios.get(`/chats/messages/${activeContactId}?page=1`);
 
           // Format messages for ChatArea
-          const formatted = res.data.map((m) => ({
+          const formatted = res.data.messages.map((m) => ({
             id: m._id,
             senderId: m.senderId === session.user.id ? "me" : m.senderId,
             text: m.text,
@@ -185,6 +189,7 @@ export default function ChatPage() {
             rawDate: new Date(m.createdAt),
           }));
           setActiveMessages(formatted);
+          setHasMoreMessages(res.data.hasMore);
 
           if (socket) {
             socket.emit("markMessagesRead", {
@@ -198,7 +203,35 @@ export default function ChatPage() {
       };
       fetchMessages();
     }
-  }, [activeContactId, status]);
+  }, [activeContactId, status, session?.user?.id, socket]);
+
+  const loadMoreMessages = async () => {
+    if (isLoadingMore || !hasMoreMessages) return;
+    setIsLoadingMore(true);
+    try {
+      const nextPage = chatPage + 1;
+      const res = await axios.get(`/chats/messages/${activeContactId}?page=${nextPage}`);
+      const formatted = res.data.messages.map((m) => ({
+        id: m._id,
+        senderId: m.senderId === session.user.id ? "me" : m.senderId,
+        text: m.text,
+        fileUrl: m.fileUrl,
+        fileType: m.fileType,
+        filePublicId: m.filePublicId,
+        isRead: m.isRead,
+        time: formatTime(m.createdAt),
+        date: formatDate(m.createdAt),
+        rawDate: new Date(m.createdAt),
+      }));
+      setActiveMessages(prev => [...formatted, ...prev]);
+      setChatPage(nextPage);
+      setHasMoreMessages(res.data.hasMore);
+    } catch (error) {
+      console.error("Failed to load more messages:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   // Socket event listeners
   useEffect(() => {
@@ -708,6 +741,9 @@ export default function ChatPage() {
           socket={socket}
           onChatAction={handleChatAction}
           onMobileBack={handleMobileBack}
+          loadMoreMessages={loadMoreMessages}
+          hasMoreMessages={hasMoreMessages}
+          isLoadingMore={isLoadingMore}
         />
       </div>
 
