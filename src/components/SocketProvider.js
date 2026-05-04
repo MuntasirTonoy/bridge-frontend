@@ -14,7 +14,7 @@ export function SocketProvider({ children }) {
   useEffect(() => {
     if (!session?.user?.id) return;
 
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
     const newSocket = io(socketUrl, {
       transports: ["websocket", "polling"],
     });
